@@ -10,34 +10,33 @@
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);cursor:none;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;transition:background .6s}
 
 /* =====================
-   LOADING — буква Б
+   LOADING — логотип заполняется снизу вверх
    ===================== */
 #loading{
-  position:fixed;inset:0;background:var(--bg);
-  z-index:999999;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:20px;
+  position:fixed;inset:0;background:#0a0a0a;
+  z-index:999999;display:flex;
+  align-items:center;justify-content:center;
   transition:opacity .8s ease;
 }
 #loading.done{opacity:0;pointer-events:none}
-#loading svg{width:100px;height:130px}
-#loading .b-stroke{
-  fill:none;stroke:#fff;stroke-width:2.5;
-  stroke-linecap:round;stroke-linejoin:round;
-  stroke-dasharray:500;stroke-dashoffset:500;
-  animation:drawB 2.2s cubic-bezier(.4,0,.2,1) forwards;
+.load-logo-wrap{
+  position:relative;
+  width:120px;height:60px;
+  overflow:hidden;
 }
-#loading .b-fill{
-  fill:#fff;opacity:0;
-  animation:fillB .5s ease 2s forwards;
+.load-logo-wrap img{
+  position:absolute;top:0;left:0;
+  width:100%;height:100%;
+  object-fit:contain;
 }
-#loading .load-text{
-  color:rgba(255,255,255,.25);font-size:9px;
-  font-weight:700;letter-spacing:3px;
-  animation:ltPulse 1.5s ease infinite;
+.load-logo-wrap .ll-bg{
+  opacity:.15;
 }
-@keyframes drawB{to{stroke-dashoffset:0}}
-@keyframes fillB{to{opacity:1}}
-@keyframes ltPulse{0%,100%{opacity:.15}50%{opacity:.5}}
+.load-logo-wrap .ll-fill{
+  opacity:1;
+  clip-path:inset(100% 0 0 0);
+  -webkit-clip-path:inset(100% 0 0 0);
+}
 
 /* =====================
    CURSOR
@@ -217,7 +216,7 @@ body{cursor:auto}
 .hints span{font-size:8px;padding:3px 8px}
 .foot{bottom:16px;right:16px}
 .foot a{font-size:9px}
-#loading svg{width:70px;height:90px}
+.load-logo-wrap{width:80px;height:40px}
 }
 @media(max-width:480px){
 .hnav{gap:8px}
@@ -228,13 +227,12 @@ body{cursor:auto}
 </head>
 <body>
 
-<!-- LOADING — буква Б по контуру -->
+<!-- LOADING — логотип заполняется снизу вверх -->
 <div id="loading">
-  <svg viewBox="0 0 80 110" xmlns="http://www.w3.org/2000/svg">
-    <path class="b-stroke" d="M20 10 L70 10 L20 10 L20 100 L55 100 Q72 100 72 82 Q72 64 55 64 L20 64"/>
-    <path class="b-fill" d="M20 10 L70 10 L20 10 L20 100 L55 100 Q72 100 72 82 Q72 64 55 64 L20 64 Z"/>
-  </svg>
-  <div class="load-text">LOADING</div>
+  <div class="load-logo-wrap">
+    <img class="ll-bg" src="logo-black.png" alt="">
+    <img class="ll-fill" id="loadFill" src="logo-black.png" alt="">
+  </div>
 </div>
 
 <div id="cursor"></div>
@@ -329,6 +327,7 @@ var lightbox=document.getElementById('lightbox');
 var lbImg=document.getElementById('lbImg');
 var lbCloseBtn=document.getElementById('lbClose');
 var loadingEl=document.getElementById('loading');
+var loadFill=document.getElementById('loadFill');
 
 var cards=[];
 var zTop=100;
@@ -388,6 +387,7 @@ function build(){
   });
 }
 
+/* CURSOR */
 document.addEventListener('mousemove',function(e){
   cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';
   clabel.style.left=e.clientX+'px';clabel.style.top=e.clientY+'px';
@@ -401,6 +401,7 @@ canvas.addEventListener('mouseout',function(e){
   if(!e.target.closest('.card')){cur.classList.remove('hover');clabel.classList.remove('on');}
 });
 
+/* DRAG */
 canvas.addEventListener('mousedown',function(e){
   var t=e.target.closest('.card');if(!t)return;e.preventDefault();
   var c=cards[t.getAttribute('data-idx')];dragC=c;
@@ -422,6 +423,7 @@ document.addEventListener('mouseup',function(){
   dragC.vx=dragVel.x;dragC.vy=dragVel.y;dragC=null;snd();
 });
 
+/* PHYSICS */
 function tick(){
   var W=window.innerWidth/zoom,H=window.innerHeight/zoom;
   for(var i=0;i<cards.length;i++){
@@ -452,6 +454,7 @@ function tick(){
 }
 tick();
 
+/* DBLCLICK → DETAIL */
 canvas.addEventListener('dblclick',function(e){
   var t=e.target.closest('.card');if(!t)return;
   openDetail(t.getAttribute('data-project'));
@@ -475,7 +478,6 @@ function openDetail(key){
   for(var i=0;i<imgs.length;i++){
     imgs[i].addEventListener('click',function(){
       lbImg.src=this.src;lbImg.style.display='block';
-      var v=lightbox.querySelector('video');if(v)v.style.display='none';
       lightbox.classList.add('open');
     });
   }
@@ -490,11 +492,9 @@ dCloseBtn.addEventListener('click',function(){
 
 lbCloseBtn.addEventListener('click',closeLB);
 lightbox.addEventListener('click',function(e){if(e.target===lightbox)closeLB();});
-function closeLB(){
-  lightbox.classList.remove('open');lbImg.style.display='none';
-  var v=lightbox.querySelector('video');if(v){v.pause();v.style.display='none';}
-}
+function closeLB(){lightbox.classList.remove('open');lbImg.style.display='none';}
 
+/* ZOOM */
 canvas.addEventListener('wheel',function(e){
   e.preventDefault();
   var d=e.deltaY>0?-0.04:0.04;
@@ -502,6 +502,7 @@ canvas.addEventListener('wheel',function(e){
   world.style.transform='scale('+zoom+')';
 },{passive:false});
 
+/* KEYBOARD */
 document.addEventListener('keydown',function(e){
   if(e.code==='Space'&&!detail.classList.contains('open')){
     e.preventDefault();gravOn=!gravOn;
@@ -514,6 +515,7 @@ document.addEventListener('keydown',function(e){
   }
 });
 
+/* SHAKE DETECT */
 var shPts=[],lastShake=0;
 document.addEventListener('mousemove',function(e){
   var now=Date.now();
@@ -546,6 +548,7 @@ function scatter(){
   setTimeout(snd,350);
 }
 
+/* TABS */
 var tabs=document.querySelectorAll('.tb');
 for(var t=0;t<tabs.length;t++){
   tabs[t].addEventListener('click',function(){
@@ -586,14 +589,7 @@ for(var t=0;t<tabs.length;t++){
       zTop++;c.el.style.zIndex=zTop;
       setTimeout(function(){c.el.style.transition='';},700);
     });
-  });
-  tabs[t].addEventListener('dblclick',function(){
-    var f=this.getAttribute('data-f');if(f!=='all')openDetail(f);
-  });
-}
-
-var tCard=null,tOff={x:0,y:0},tLast=0,lastTap=0;
-canvas.addEventListener('touchstart',function(e){
+  function(e){
   if(e.touches.length>1)return;
   var touch=e.touches[0];
   var el=document.elementFromPoint(touch.clientX,touch.clientY);
@@ -623,6 +619,7 @@ canvas.addEventListener('touchend',function(){
   if(!tCard)return;tCard.el.classList.remove('dr');tCard=null;snd();
 });
 
+/* TOUCH — PINCH ZOOM */
 var pinchD=0;
 canvas.addEventListener('touchstart',function(e){
   if(e.touches.length===2){
@@ -642,6 +639,7 @@ canvas.addEventListener('touchmove',function(e){
 },{passive:true});
 canvas.addEventListener('touchend',function(e){if(e.touches.length<2)pinchD=0;},{passive:true});
 
+/* DEVICE SHAKE */
 if(isMob&&window.DeviceMotionEvent){
   var shLast=0;
   window.addEventListener('devicemotion',function(e){
@@ -652,12 +650,24 @@ if(isMob&&window.DeviceMotionEvent){
   });
 }
 
-/* LOADING — ждём окончания анимации буквы Б */
-setTimeout(function(){
-  loadingEl.classList.add('done');
-  setTimeout(function(){loadingEl.style.display='none';},800);
-},3000);
+/* LOADING — логотип заполняется снизу вверх */
+var loadProg=0;
+var loadInt=setInterval(function(){
+  loadProg+=Math.random()*20+5;
+  if(loadProg>100)loadProg=100;
+  var top=100-loadProg;
+  loadFill.style.clipPath='inset('+top+'% 0 0 0)';
+  loadFill.style.webkitClipPath='inset('+top+'% 0 0 0)';
+  if(loadProg>=100){
+    clearInterval(loadInt);
+    setTimeout(function(){
+      loadingEl.classList.add('done');
+      setTimeout(function(){loadingEl.style.display='none';},800);
+    },400);
+  }
+},250);
 
+/* BUILD */
 build();
 setTimeout(scatter,1200);
 
